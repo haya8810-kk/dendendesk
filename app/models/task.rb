@@ -1,4 +1,14 @@
 class Task < ApplicationRecord
+  # Ex:- scope :active, -> {where(:active => true)}
+  has_one_attached :image
+
+  validates :name, presence: true, length: { maximum: 30 }
+  validate :validate_name_not_including_comma
+
+  belongs_to :user
+
+  scope :recent, -> { order(created_at: :desc) }
+  
   def self.csv_attributes
     ["name", "description", "created_at", "updated_at"]
   end
@@ -7,7 +17,8 @@ class Task < ApplicationRecord
     CSV.generate(headers: true) do |csv|
       csv << csv_attributes
       all.each do |task|
-        csv << csv_attributes.map{|attr| task.send(attr) }
+        csv << csv_attributes.map{ |attr| task.send(attr) }
+      end
     end
   end
 
@@ -19,9 +30,6 @@ class Task < ApplicationRecord
     end
   end
 
-  # Ex:- scope :active, -> {where(:active => true)}
-  has_one_attached :image
-
   def self.ransackable_attributes(auth_object = nil)
     %w[name created_at]
   end
@@ -30,17 +38,9 @@ class Task < ApplicationRecord
     []
   end
   
-  validates :name, presence: true, length: { maximum: 30 }
-  validate :validate_name_not_including_comma
+  private
 
-  belongs_to :user
-
-  scope :recent, -> { order(created_at: :desc) }
-  
-private
-
-    def validate_name_not_including_comma
-      errors.add(:name, 'にカンマを含めることはできません') if name&.include?(',')
-    end
+  def validate_name_not_including_comma
+    errors.add(:name, 'にカンマを含めることはできません') if name&.include?(',')
   end
 end
